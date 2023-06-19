@@ -7,6 +7,14 @@ let shape data = (Array.length data, Array.length data.(0))
 
 let create data = { data; shape = shape data }
 
+let apply_elem ~f mat = 
+  let result = Array.map ~f:(fun row -> Array.map ~f row) mat.data in
+  { data = result; shape = shape result}
+
+let pow mat ~n = apply_elem ~f:(fun x -> x **. n) mat
+
+let mul mat ~const = apply_elem ~f:(fun x -> x *. const) mat
+
 let matrix_op ~op d1 d2 = 
   (* add or subtract matrices *)
   let op_fn ~op d1 d2 = 
@@ -43,8 +51,7 @@ let subtract m1 m2 =
   else matrix_op ~op:Sub m1.data m2.data
 
 let transpose mat =
-  let num_rows = fst mat.shape in
-  let num_cols = snd mat.shape in
+  let num_rows, num_cols = mat.shape in
   let data = 
     Array.init num_cols ~f:(fun i ->
       Array.init num_rows ~f:(fun j -> mat.data.(j).(i)))
@@ -62,20 +69,32 @@ let matmul m1 m2 =
 
 
 let add a b = 
-  let backward (out: t) = out, out in
+  let grad (out: t) = out, out in
   let result = sum a b in
-  result, backward
+  result, grad
 
 let sub a b = 
-  let backward (out: t) = out, out in
+  let grad (out: t) = out, out in
   let result = subtract a b in
-  result, backward
+  result, grad
 
 let dot a b =
-  let backward out =
+  let grad out =
     let da = matmul out (transpose b) in
     let db = matmul (transpose a) out in
     da, db
   in
   let result = matmul a b in
-  result, backward
+  result, grad
+
+
+(* ------------------------------- Error Functions ------------------------------- *)
+
+let mean mat = Array.fold ~init:0. ~f:(fun acc x -> acc +. x.(0)) mat.data
+
+let mse pred labels = 
+  let n = pred.shape |> fst |> Float.of_int in
+  let grad = mul ~const:(2. /. n) (matrix_op ~op:Sub pred.data labels.data) in
+  let result = matrix_op ~op:Sub pred.data labels.data |> pow ~n:2. |> mean in
+  result, grad
+
