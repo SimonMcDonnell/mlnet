@@ -1,7 +1,7 @@
 open Base
 
 type t = { data : float array array; shape : int * int } [@@deriving show]
-type op = Add | Sub
+type op = Add | Sub | Mul
 
 let shape data = (Array.length data, Array.length data.(0))
 
@@ -25,12 +25,24 @@ let mul mat ~const =
   let result = apply_elem ~f:(fun x -> x *. const) mat.data in
   { data = result; shape = mat.shape }
 
+let sigmoid mat = 
+  let sig_fn x = 1. /. (1. +. Float.exp (Float.neg x)) in
+  let result = apply_elem ~f:(fun x -> sig_fn x) mat.data in
+  { data = result; shape = mat.shape }
+
+let replace mat ~cond ~new_val = 
+  let result = Array.map ~f:(fun row -> 
+    Array.map ~f:(fun i -> if cond i then new_val else i) row) mat.data
+  in
+  { data = result; shape = mat.shape }
+
 let matrix_op ~op d1 d2 = 
   (* add or subtract matrices *)
   let op_fn ~op d1 d2 = 
     match op with
     | Add -> Array.map2_exn ~f:(fun x y -> x +. y) d1 d2
     | Sub -> Array.map2_exn ~f:(fun x y -> x -. y) d1 d2
+    | Mul -> Array.map2_exn ~f:(fun x y -> x *. y) d1 d2
   in
   Array.map2_exn ~f:(op_fn ~op) d1 d2
 
@@ -78,29 +90,9 @@ let matmul m1 m2 =
   let result = Array.map ~f:(fun row -> Array.map ~f:(product row) m2_T) m1.data in
   { data = result; shape = (fst m1.shape, snd m2.shape) }
 
-
-(* ------------------------------- Differentiable Functions ------------------------------- *)
-
-(* 
-let add a b = 
-  let grad (out: t) = out, out in
-  let result = sum a b in
-  result, grad
-
-let sub a b = 
-  let grad (out: t) = out, out in
-  let result = subtract a b in
-  result, grad
-
-let dot a b =
-  let grad out =
-    let da = matmul out.data (transp b.data) in
-    let db = matmul (transp a.data) out.data in
-    let da_shape, db_shape = ((fst out.shape, fst b.shape), (snd a.shape, snd out.shape)) in
-    { data = da; shape = da_shape }, { data = db; shape = db_shape }
-  in
-  let result = matmul a.data b.data in
-  { data = result; shape = (fst a.shape, snd b.shape) }, grad *)
+let multiply m1 m2 = 
+  let result = matrix_op ~op:Mul m1.data m2.data in
+  { data = result; shape = m1.shape }
 
 
 (* ------------------------------- Error Functions ------------------------------- *)

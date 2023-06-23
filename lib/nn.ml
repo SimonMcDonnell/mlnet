@@ -56,7 +56,6 @@ let sequential layers = { layers = layers; forward = chain_forward layers }
 let linear n_in n_out = 
   let name = Printf.sprintf "(Linear in=%d out=%d)" n_in n_out in
   let w_init, b_init = Matrix.ones n_in n_out, Matrix.ones 1 n_out in
-  let dw_init, db_init = Matrix.zeros n_in n_out, Matrix.zeros 1 n_out in
   
   let forward layer input = 
     let backprop out =
@@ -71,5 +70,34 @@ let linear n_in n_out =
     result, backprop
   in
   
-  { name = name; params = [ w_init; b_init ]; grads = [ dw_init; db_init ]; forward = forward }
+  { name = name; params = [ w_init; b_init ]; grads = [ ]; forward = forward }
 
+let relu = 
+  let name = Printf.sprintf "(ReLU)" in
+
+  let forward _ input = 
+    let backprop out = 
+      let input_ = Matrix.replace input ~cond:(fun x -> Float.(<=) x 0.) ~new_val:0. in
+      let input_ = Matrix.replace input_ ~cond:(fun x -> Float.(>) x 0.) ~new_val:0. in
+      (Matrix.multiply input_ out)
+    in
+    let result = Matrix.replace input ~cond:(fun x -> Float.(<) x 0.) ~new_val:0. in
+    result, backprop
+  in
+
+  { name = name; params = []; grads = [  ]; forward = forward }
+
+let sigmoid = 
+  let name = Printf.sprintf "(Sigmoid)" in
+
+  let forward _ input = 
+    let backprop out = 
+      let sig_input = Matrix.sigmoid input in
+      let nrows, ncols = sig_input.shape in
+      let one_minus_sig = Matrix.sub (Matrix.ones nrows ncols) sig_input in
+      Matrix.multiply sig_input one_minus_sig |> Matrix.multiply out
+    in
+    Matrix.sigmoid input, backprop
+  in
+  
+  { name = name; params = []; grads = [  ]; forward = forward }
