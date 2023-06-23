@@ -1,39 +1,75 @@
 open Base
 
 
-type model = {
-  layers : string;
+type layer = {
+  name : string;
   mutable params : Matrix.t list;
   mutable grads : Matrix.t list;
-  forward : model -> Matrix.t -> Matrix.t * (Matrix.t -> Matrix.t list) 
+  forward : layer -> Matrix.t -> Matrix.t * (Matrix.t -> Matrix.t)
 }
 
+type model = {
+  layers : layer list;
+  forward : Matrix.t -> Matrix.t * (Matrix.t -> unit) 
+}
+
+
 let show model = 
-  let layer_str = model.layers in
-  let param_str = 
-    String.concat ~sep:"\n" @@ List.map ~f:(fun mat -> Matrix.show mat) model.params 
+  let layer_str = List.map ~f:(fun layer -> layer.name) model.layers |> String.concat ~sep:" -> " in
+  let param_str = List.map ~f:(fun layer -> layer.params) model.layers
+    |> List.concat
+    |> List.map ~f:(fun mat -> Matrix.show mat)
+    |> String.concat ~sep:"\n" 
   in
-  let grad_str = String.concat ~sep:"\n" @@ List.map ~f:(fun mat -> Matrix.show mat) model.grads in
+  let grad_str = 
+    List.map ~f:(fun layer -> layer.grads) model.layers
+    |> List.concat
+    |> List.map ~f:(fun mat -> Matrix.show mat)
+    |> String.concat ~sep:"\n" 
+  in
   "----\nModel:\nlayers: " ^ layer_str ^ "\nparameters:\n" ^ param_str ^ "\ngradients:\n"  ^ 
   grad_str ^ "\n----"
 
+
+let chain_backprop backprops = 
+  let rec ch_b bprops out = 
+    match bprops with
+    | [] -> ()
+    | hd :: tl -> 
+      let dX = hd out in
+      ch_b tl dX
+  in
+  ch_b backprops
+
+let chain_forward layers = 
+  let rec ch_f (layers: layer list) backprops input = 
+    match layers with 
+    | [] -> input, chain_backprop backprops
+    | hd :: tl ->
+      let result, backprop = hd.forward hd input in
+      ch_f tl (backprop :: backprops) result
+  in
+  ch_f layers []
+
+let sequential layers = { layers = layers; forward = chain_forward layers }
+
 let linear n_in n_out = 
-  let layers = Printf.sprintf "Linear in=%d out=%d" n_in n_out in
+  let name = Printf.sprintf "(Linear in=%d out=%d)" n_in n_out in
   let w_init, b_init = Matrix.ones n_in n_out, Matrix.ones 1 n_out in
   let dw_init, db_init = Matrix.zeros n_in n_out, Matrix.zeros 1 n_out in
   
-  let forward model input = 
+  let forward layer input = 
     let backprop out =
-      let dw, db = List.nth_exn model.grads 0, List.nth_exn model.grads 1 in
-      let dw = Matrix.sum dw (Matrix.matmul (Matrix.transpose input) out) in
-      let db = Matrix.sum db out in
-      model.grads <- [ dw; db ];
-      [ dw; db ]
+      let dw, db = Matrix.matmul (Matrix.transpose input) out, out in
+      let weights = List.nth_exn layer.params 0 in
+      let dx = Matrix.matmul out (Matrix.transpose weights) in
+      layer.grads <- [ dw; db ];
+      dx
     in
-    let w, b = List.nth_exn model.params 0, List.nth_exn model.params 1 in
+    let w, b = List.nth_exn layer.params 0, List.nth_exn layer.params 1 in
     let result = Matrix.matmul input w |> Matrix.sum b in
     result, backprop
   in
   
-  { layers = layers; params = [ w_init; b_init ]; grads = [ dw_init; db_init ]; forward = forward }
+  { name = name; params = [ w_init; b_init ]; grads = [ dw_init; db_init ]; forward = forward }
 

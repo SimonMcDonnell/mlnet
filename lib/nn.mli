@@ -1,9 +1,9 @@
+type layer
 type model = {
-  layers : string;
-  mutable params : Matrix.t list;
-  mutable grads : Matrix.t list;
-  forward : model -> Matrix.t -> Matrix.t * (Matrix.t -> Matrix.t list) 
+  layers : layer list;
+  forward : Matrix.t -> Matrix.t * (Matrix.t -> unit) 
 }
 
 val show : model -> string
-val linear : int -> int -> model
+val sequential : layer list -> model
+val linear : int -> int -> layer
