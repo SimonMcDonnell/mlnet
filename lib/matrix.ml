@@ -1,19 +1,19 @@
 open Base
 
+
 type t = { data : float array array; shape : int * int } [@@deriving show]
 type op = Add | Sub | Mul
+
 
 let shape data = (Array.length data, Array.length data.(0))
 
 let from_array data = { data; shape = shape data }
 
 let ones n_rows n_cols = 
-  Array.init ~f:(fun _ -> Array.init ~f:(fun _ -> 1.) n_cols) n_rows
-  |> from_array
+  Array.init ~f:(fun _ -> Array.init ~f:(fun _ -> 1.) n_cols) n_rows |> from_array
 
 let zeros n_rows n_cols = 
-  Array.init ~f:(fun _ -> Array.init ~f:(fun _ -> 0.) n_cols) n_rows
-  |> from_array
+  Array.init ~f:(fun _ -> Array.init ~f:(fun _ -> 0.) n_cols) n_rows |> from_array
 
 let he_init n_rows n_cols = 
   (* use 'He' initialization technique. *)
@@ -45,6 +45,10 @@ let sigmoid mat =
   let sig_fn x = 1. /. (1. +. Float.exp (Float.neg x)) in
   let result = apply_elem ~f:(fun x -> sig_fn x) mat.data in
   { data = result; shape = mat.shape }
+
+let apply ~f mat = 
+  let data = apply_elem ~f mat.data in
+  { data; shape = mat.shape }
 
 let replace mat ~cond ~new_val = 
   let result = Array.map ~f:(fun row -> 
@@ -110,15 +114,4 @@ let multiply m1 m2 =
   let result = matrix_op ~op:Mul m1.data m2.data in
   { data = result; shape = m1.shape }
 
-
-(* ------------------------------- Error Functions ------------------------------- *)
-
-(* let mean mat = Array.fold ~init:0. ~f:(fun acc x -> acc +. x.(0)) mat.data
-
-let mse pred labels = 
-  let n = pred.shape |> fst |> Float.of_int in
-  let diff = { data = matrix_op ~op:Sub pred.data labels.data; shape = pred.shape } in
-  let grad = mul ~const:(2. /. n) diff in
-  let result = diff |> pow ~n:2. |> mean in
-  result, grad *)
-
+let divide m1 m2 = multiply m1 (apply ~f:(fun x -> 1. /. x) m2)

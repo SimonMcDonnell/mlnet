@@ -9,3 +9,5 @@ val sequential : layer list -> model
 val linear : int -> int -> layer
 val relu : layer
 val sigmoid : layer
+val mse_loss : Matrix.t -> Matrix.t -> float * Matrix.t
+val bce_loss : Matrix.t -> Matrix.t -> float * Matrix.t

@@ -3,14 +3,22 @@ open Stdio
 open Mlnet
 
 
-let inputs = Matrix.from_array [| [| 1.; 1.; -2. |]; [| 1.; 3.; 4. |]; [| 1.; -5.; -6.|]; [| 1.; -7.; -8.|]|]
-let dummy_grad = Matrix.ones 4 1
+let inputs = Matrix.from_array [| [| 1.; 2.; 3. |]; [| 4.; 5.; 6. |]; [| 7.; 8.; 9.|]; [| 10.; 11.; 12.|]|]
+let targets = Matrix.from_array [| [| 10.|]; [| 30. |]; [| 40.|]; [| 10.|]|]
+let loss_fn = Nn.mse_loss
+let model = Nn.sequential [ 
+  Nn.linear 3 3; 
+  Nn.linear 3 2;
+  Nn.relu; 
+  Nn.linear 2 1; 
+]
 
-let model = Nn.sequential [ Nn.linear 3 2; Nn.relu; Nn.linear 2 1; Nn.sigmoid ]
+let out, backprop = model.forward inputs
+let loss, grad = loss_fn out targets
 
 let () = 
-  let pred, backprop = model.forward inputs in
-  Matrix.show pred |> print_endline;
+  printf "%f\n" loss;
+  Matrix.show grad |> print_endline;
   Nn.show model |> print_endline;
-  backprop dummy_grad;
+  backprop grad;
   Nn.show model |> print_endline
