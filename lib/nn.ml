@@ -3,7 +3,7 @@ open Base
 
 type layer = {
   name : string;
-  mutable params : Matrix.t list;
+  params : Matrix.t list;
   mutable grads : Matrix.t list;
   forward : layer -> Matrix.t -> Matrix.t * (Matrix.t -> Matrix.t)
 }
@@ -30,7 +30,6 @@ let show model =
   "----\nModel:\nlayers: " ^ layer_str ^ "\nparameters:\n" ^ param_str ^ "\ngradients:\n"  ^ 
   grad_str ^ "\n----"
 
-
 let chain_backprop backprops = 
   let rec ch_b bprops out = 
     match bprops with
@@ -55,7 +54,7 @@ let sequential layers = { layers = layers; forward = chain_forward layers }
 
 let linear n_in n_out = 
   let name = Printf.sprintf "(Linear in=%d out=%d)" n_in n_out in
-  let w_init, b_init = Matrix.ones n_in n_out, Matrix.ones 1 n_out in
+  let w_init, b_init = Matrix.he_init n_in n_out, Matrix.zeros 1 n_out in
   
   let forward layer input = 
     let backprop out =
@@ -69,8 +68,7 @@ let linear n_in n_out =
     let result = Matrix.matmul input w |> Matrix.sum b in
     result, backprop
   in
-  
-  { name = name; params = [ w_init; b_init ]; grads = [ ]; forward = forward }
+  { name; params = [ w_init; b_init ]; grads = [ ]; forward }
 
 let relu = 
   let name = Printf.sprintf "(ReLU)" in
@@ -84,8 +82,7 @@ let relu =
     let result = Matrix.replace input ~cond:(fun x -> Float.(<) x 0.) ~new_val:0. in
     result, backprop
   in
-
-  { name = name; params = []; grads = [  ]; forward = forward }
+  { name; params = []; grads = [  ]; forward }
 
 let sigmoid = 
   let name = Printf.sprintf "(Sigmoid)" in
@@ -99,5 +96,4 @@ let sigmoid =
     in
     Matrix.sigmoid input, backprop
   in
-  
-  { name = name; params = []; grads = [  ]; forward = forward }
+  { name; params = []; grads = [  ]; forward }

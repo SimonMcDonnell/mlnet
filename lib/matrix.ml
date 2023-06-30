@@ -15,6 +15,22 @@ let zeros n_rows n_cols =
   Array.init ~f:(fun _ -> Array.init ~f:(fun _ -> 0.) n_cols) n_rows
   |> from_array
 
+let he_init n_rows n_cols = 
+  (* use 'He' initialization technique. *)
+  let uni_to_gauss u0 u1 = 
+    (* create gaussian sample from uniform sample using Box Muller transform *)
+    (Float.sqrt (-2.0 *. Float.log u0)) *. (Float.cos (2.0 *. Float.pi *. u1))
+  in
+  let data = 
+    Array.init n_rows ~f:(fun _ -> 
+      Array.init n_cols ~f:(fun _ -> 
+        let n_in = Float.of_int n_rows in
+        (Float.sqrt (2.0 /. n_in)) *. (uni_to_gauss (Random.float 1.) (Random.float 1.))
+      )
+    )
+  in
+  { data; shape = (n_rows, n_cols)}
+
 let apply_elem ~f data = Array.map ~f:(fun row -> Array.map ~f row) data
 
 let pow mat ~n = 
@@ -72,17 +88,17 @@ let sum m1 m2 =
 
 let sub m1 m2 =
   (* if not same shape, check for array broadcast and alter shape to make subtraction work *)
-    if fst m1.shape = 1 then
-      let m1_reshaped = Array.map ~f:(repeat_elem ~n:(fst m2.shape)) m1.data.(0) |> transp in
-      let result = matrix_op ~op:Sub m1_reshaped m2.data in
-      { data = result; shape = m2.shape }
-    else if fst m2.shape = 1 then
-      let m2_reshaped = Array.map ~f:(repeat_elem ~n:(fst m1.shape)) m2.data.(0) |> transp in
-      let result = matrix_op ~op:Sub m1.data m2_reshaped in
-      { data = result; shape = m1.shape }
-    else 
-      let result = matrix_op ~op:Sub m1.data m2.data in
-      { data = result; shape = m1.shape }
+  if fst m1.shape = 1 then
+    let m1_reshaped = Array.map ~f:(repeat_elem ~n:(fst m2.shape)) m1.data.(0) |> transp in
+    let result = matrix_op ~op:Sub m1_reshaped m2.data in
+    { data = result; shape = m2.shape }
+  else if fst m2.shape = 1 then
+    let m2_reshaped = Array.map ~f:(repeat_elem ~n:(fst m1.shape)) m2.data.(0) |> transp in
+    let result = matrix_op ~op:Sub m1.data m2_reshaped in
+    { data = result; shape = m1.shape }
+  else 
+    let result = matrix_op ~op:Sub m1.data m2.data in
+    { data = result; shape = m1.shape }
 
 let matmul m1 m2 =
   let m2_T = transp m2.data in

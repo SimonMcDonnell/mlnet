@@ -13,3 +13,4 @@ val transpose : t -> t
 val replace : t -> cond:(float -> bool) -> new_val : float -> t
 val multiply : t -> t -> t
 val sigmoid : t -> t
+val he_init : int -> int -> t
