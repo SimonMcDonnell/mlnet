@@ -48,7 +48,7 @@ let chain_forward layers =
   in
   ch_f layers []
 
-let sequential layers = { layers = layers; forward = chain_forward layers }
+let chain layers = { layers = layers; forward = chain_forward layers }
 
 
 (* --------------------------------------------LAYERS-------------------------------------------- *)
