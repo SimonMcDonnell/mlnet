@@ -14,14 +14,14 @@ let model = Nn.chain [
   Nn.linear 2 1; 
 ]
 let loss_fn = Nn.mse_loss
-let optimizer = Optim.sgd model.layers
+let optimizer = Optim.sgd model
 
 let () =
   for epoch = 1 to 500 do
     let out, backprop = model.forward inputs in
     let loss, grad = loss_fn out targets in
     backprop grad;
-    optimizer.step model.layers;
+    optimizer.step model;
     printf "Epoch %d - loss=%f\n" epoch loss;
   done;
   let out, _ = model.forward inputs in
