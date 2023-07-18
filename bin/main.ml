@@ -17,12 +17,6 @@ let loss_fn = Nn.mse_loss
 let optimizer = Optim.sgd model
 
 let () =
-  for epoch = 1 to 500 do
-    let out, backprop = model.forward inputs in
-    let loss, grad = loss_fn out targets in
-    backprop grad;
-    optimizer.step model;
-    printf "Epoch %d - loss=%f\n" epoch loss;
-  done;
+  Train.fit model inputs targets ~epochs:300 ~loss_fn ~optimizer;
   let out, _ = model.forward inputs in
   Matrix.show out |> print_endline

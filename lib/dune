@@ -1,5 +1,5 @@
 (library
  (name mlnet)
- (libraries base)
+ (libraries base stdio)
  (preprocess
   (pps ppx_deriving.show)))
