@@ -137,3 +137,34 @@ let bce_loss pred target =
   let result = Matrix.sub a b |> mean in
   result, grad
 
+let cross_entropy_loss pred target = 
+  (* pred is a matrix of logits, target is a matrix of labels *)
+  let softmax_fn input = 
+    let mat_exp = Matrix.apply input ~f:(fun x -> Float.exp x) in
+    let sum = 
+      let sum_cols = (Matrix.sum_cols mat_exp).data in
+      Array.map sum_cols ~f:(fun row -> Array.init (snd input.shape) ~f:(fun _ -> row.(0)))
+      |> Matrix.from_array
+    in
+    Matrix.divide mat_exp sum
+  in
+  let softmax = softmax_fn pred in
+  let result = 
+    Array.map2_exn softmax.data target.Matrix.data ~f:(fun p t ->
+      let row_total = Array.fold p ~init:0. ~f:(+.) in
+      let res = p.(Float.to_int t.(0)) /. row_total in
+      [| res |]
+    ) 
+    |> Matrix.from_array 
+    |> Matrix.apply ~f:(fun x -> Float.neg 1. *. Float.log x)
+    |> mean
+  in
+  let grad = 
+    Array.map2_exn softmax.data target.Matrix.data ~f:(fun p t ->
+      Array.mapi p ~f:(fun i x -> 
+        if i = Float.to_int t.(0) then x -. 1. else x)  
+    )
+    |> Matrix.from_array
+    |> Matrix.mul ~const:(1. /. Float.of_int (fst pred.shape))
+  in
+  result, grad

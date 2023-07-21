@@ -12,6 +12,8 @@ val sigmoid : t -> t
 val apply : t -> f:(float -> float) -> t
 val replace : t -> cond:(float -> bool) -> new_val:float -> t
 val transpose : t -> t
+val sum_rows : t -> t
+val sum_cols : t -> t
 val sum : t -> t -> t
 val sub : t -> t -> t
 val matmul : t -> t -> t

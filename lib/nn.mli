@@ -17,3 +17,4 @@ val relu : layer
 val sigmoid : layer
 val mse_loss : Matrix.t -> Matrix.t -> float * Matrix.t
 val bce_loss : Matrix.t -> Matrix.t -> float * Matrix.t
+val cross_entropy_loss : Matrix.t -> Matrix.t -> float * Matrix.t

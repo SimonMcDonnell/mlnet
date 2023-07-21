@@ -71,6 +71,18 @@ let transp data =
 let transpose mat = 
   { data = transp mat.data; shape = (snd mat.shape, fst mat.shape) }
 
+let sum_rows mat = 
+  let mat_data = (transpose mat).data in
+  Array.map mat_data ~f:(fun row -> Array.fold row ~init:0. ~f:(+.))
+  |> Array.map ~f:(fun sum -> [| sum |])
+  |> from_array
+  |> transpose
+
+let sum_cols mat = 
+  Array.map mat.data ~f:(fun row -> Array.fold row ~init:0. ~f:(+.))
+  |> Array.map ~f:(fun sum -> [| sum |])
+  |> from_array
+  
 
  (* ---------------------------------------- BINARY OPS ---------------------------------------- *)
 
