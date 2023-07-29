@@ -1,4 +1,3 @@
-open Base
 open Stdio
 open Mlnet
 
@@ -19,4 +18,5 @@ let optimizer = Optim.sgd model
 let () =
   Train.fit model inputs targets ~epochs:500 ~loss_fn ~optimizer;
   let out, _ = model.forward inputs in
-  Matrix.show out |> print_endline
+  printf "Accuracy=%f" (Utils.accuracy (Utils.argmax out.data) targets.data)
+  
