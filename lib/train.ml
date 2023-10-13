@@ -7,6 +7,6 @@ let fit model inputs targets ~epochs ~loss_fn ~optimizer =
     let loss, grad = loss_fn out targets in
     backprop grad;
     optimizer.Optim.step model;
-    if epoch mod 10 = 0 then
-      printf "Epoch %d --- loss=%f\n" epoch loss;
+    (* if epoch mod 10 = 0 then *)
+    printf "Epoch %d --- loss=%f\n" epoch loss;
   done;

@@ -59,7 +59,7 @@ let linear n_in n_out =
   let w_init, b_init = Matrix.he_init n_in n_out, Matrix.zeros 1 n_out in
   let forward layer input = 
     let backprop out =
-      let dw, db = Matrix.matmul (Matrix.transpose input) out, out in
+      let dw, db = Matrix.matmul (Matrix.transpose input) out, Matrix.sum_rows out in
       let weights = List.nth_exn layer.params 0 in
       let dx = Matrix.matmul out (Matrix.transpose weights) in
       layer.grads <- [ dw; db ];

@@ -1,22 +1,31 @@
+open Base
 open Stdio
 open Mlnet
 
 
-let inputs = Matrix.from_array [| [| 1.; 2.; 3. |]; [| 4.; 5.; 6. |]; [| 7.; 8.; 9.|]; [| 10.; 11.; 12.|]|]
-let targets = Matrix.from_array [| [| 0.|]; [| 1. |]; [| 2. |]; [| 0. |]|]
+let read_csv_file filename =
+  let csv = Csv.load filename |> Csv.to_array in
+  Array.map csv ~f:(fun row -> Array.map row ~f:(fun x -> Float.of_string x))
+
+let x_train, y_train = read_csv_file "bin/train_images.csv", read_csv_file "bin/train_labels.csv"
+let x_test, y_test = read_csv_file "bin/test_images.csv", read_csv_file "bin/test_labels.csv"
+
+let x_train, y_train, x_test, y_test = 
+    Matrix.from_array x_train, Matrix.from_array y_train, Matrix.from_array x_test, Matrix.from_array y_test
 
 let model = Nn.chain [ 
-  Nn.linear 3 3; 
+  Nn.linear (snd x_train.shape) 100; 
   Nn.relu;
-  Nn.linear 3 3;
+  Nn.linear 100 50; 
   Nn.relu; 
-  Nn.linear 3 3; 
+  Nn.linear 50 10; 
 ]
 let loss_fn = Nn.cross_entropy_loss
-let optimizer = Optim.sgd model
+let optimizer = Optim.sgd ~lr:0.2 model
 
 let () =
-  Train.fit model inputs targets ~epochs:500 ~loss_fn ~optimizer;
-  let out, _ = model.forward inputs in
-  printf "Accuracy=%f" (Utils.accuracy (Utils.argmax out.data) targets.data)
+  print_endline "Training model";
+  Train.fit model x_train y_train ~epochs:15 ~loss_fn ~optimizer;
+  let out, _ = model.forward x_test in
+  printf "Accuracy=%f" (Utils.accuracy (Utils.argmax out.data) y_test.data)
   

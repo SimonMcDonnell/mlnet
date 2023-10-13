@@ -1,4 +1,4 @@
 (executable
  (public_name mlnet)
  (name main)
- (libraries base stdio mlnet))
+ (libraries base stdio mlnet csv))
