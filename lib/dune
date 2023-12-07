@@ -1,5 +1,5 @@
 (library
  (name mlnet)
- (libraries base stdio)
+ (libraries base stdio owl)
  (preprocess
   (pps ppx_deriving.show)))

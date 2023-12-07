@@ -1,22 +1,20 @@
 open Base
+open Owl
 
 
-type t = { data : float array array; shape : int * int } [@@deriving show]
-type op = Add | Sub | Mul
-
+type t = { data : Mat.mat; shape : int * int }
 
 (* --------------------------------------- INITIALIZATION --------------------------------------- *)
 
+let wrap mat = { data = mat; shape = Mat.shape mat }
 
-let shape data = (Array.length data, Array.length data.(0))
+let from_array arr = Mat.of_arrays arr |> wrap
 
-let from_array data = { data; shape = shape data }
+let print mat = Mat.print mat.data
 
-let ones n_rows n_cols = 
-  Array.init n_rows ~f:(fun _ -> Array.init n_cols ~f:(fun _ -> 1.))  |> from_array
+let ones n_rows n_cols = Mat.ones n_rows n_cols |> wrap
 
-let zeros n_rows n_cols = 
-  Array.init n_rows ~f:(fun _ -> Array.init n_cols ~f:(fun _ -> 0.))  |> from_array
+let zeros n_rows n_cols = Mat.zeros n_rows n_cols |> wrap
 
 let he_init n_rows n_cols = 
   (* use 'He' initialization technique. *)
@@ -24,38 +22,23 @@ let he_init n_rows n_cols =
     (* create gaussian sample from uniform sample using Box Muller transform *)
     (Float.sqrt (-2.0 *. Float.log u0)) *. (Float.cos (2.0 *. Float.pi *. u1))
   in
-  let data = 
-    Array.init n_rows ~f:(fun _ -> 
-      Array.init n_cols ~f:(fun _ -> 
-        let n_in = Float.of_int n_rows in
-        (Float.sqrt (2.0 /. n_in)) *. (uni_to_gauss (Random.float 1.) (Random.float 1.))
-      )
-    )
-  in
-  { data; shape = (n_rows, n_cols)}
-
+  Mat.init n_rows n_cols (fun _ ->
+    (Float.sqrt (2.0 /. (Float.of_int n_rows))) *. 
+    (uni_to_gauss (Random.float 1.) (Random.float 1.)))
+  |> wrap
 
 (* ----------------------------------------- UNARY OPS ----------------------------------------- *)
 
+let pow mat ~n = Mat.(mat.data **$ n) |> wrap
 
-let apply_elem data ~f = Array.map data ~f:(fun row -> Array.map row ~f)
-
-let pow mat ~n = 
-  let result = apply_elem mat.data ~f:(fun x -> x **. n) in
-  { data = result; shape = mat.shape }
-
-let mul mat ~const = 
-  let result = apply_elem mat.data ~f:(fun x -> x *. const) in
-  { data = result; shape = mat.shape }
+let mul mat ~const = Mat.(mat.data *$ const) |> wrap
 
 let sigmoid mat = 
   let sig_fn x = 1. /. (1. +. Float.exp (Float.neg x)) in
   let result = apply_elem mat.data ~f:(fun x -> sig_fn x) in
   { data = result; shape = mat.shape }
 
-let apply mat ~f = 
-  let data = apply_elem mat.data ~f in
-  { data; shape = mat.shape }
+let apply mat ~f = Mat.map f mat.data |> wrap
 
 let replace mat ~cond ~new_val = 
   let result = Array.map mat.data ~f:(fun row -> 
